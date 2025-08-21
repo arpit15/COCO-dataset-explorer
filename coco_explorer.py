@@ -50,8 +50,7 @@ def app(args):
         size = st.sidebar.slider('plot resolution', min_value=1, max_value=50, value=15)
         score = st.sidebar.slider('score threshold', min_value=0.0, max_value=1.0, value=SCORE_DEFAULT)
 
-        draw_pred_mask = st.sidebar.checkbox("Draw predictions masks (red)")
-        draw_gt_mask = st.sidebar.checkbox("Draw ground truth masks (green)")
+        draw_gt_mask = st.sidebar.checkbox("Draw ground truth masks (green)", value=True)
 
         path = st.text_input('select image by path or filter by regular expression:',)
         image_ids = inspector.image_ids
@@ -103,8 +102,7 @@ def app(args):
         size = st.sidebar.slider('plot resolution', min_value=1, max_value=50, value=15)
         score = st.sidebar.slider('score threshold', min_value=0.0, max_value=1.0, value=SCORE_DEFAULT)
 
-        draw_pred_mask = st.sidebar.checkbox("Draw predictions masks (red)")
-        draw_gt_mask = st.sidebar.checkbox("Draw ground truth masks (green)")
+        draw_pred_mask = st.sidebar.checkbox("Draw predictions masks (red)", value=True)
 
         path = st.text_input('select image by path or filter by regular expression:',)
         image_ids = inspector.image_ids
