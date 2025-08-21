@@ -77,7 +77,7 @@ def app(args):
         print(path)
         f, fn = inspector.visualize_image(image_ids[r],
                                             draw_gt_mask=draw_gt_mask,
-                                            draw_pred_mask=draw_pred_mask,
+                                            draw_pred_mask=False,
                                             adjust_labels=False,
                                             score_threshold=score,
                                             fontsize=size,
@@ -128,7 +128,7 @@ def app(args):
         st.text(path)
         print(path)
         f, fn = inspector.visualize_image(image_ids[r],
-                                            draw_gt_mask=draw_gt_mask,
+                                            draw_gt_mask=False,
                                             draw_pred_mask=draw_pred_mask,
                                             adjust_labels=False,
                                             score_threshold=score,
