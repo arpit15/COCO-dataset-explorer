@@ -10,6 +10,7 @@ from pycocotools.coco import COCO
 
 from cocoinspector import CoCoInspector
 
+SCORE_DEFAULT = 0.55
 
 @st.cache(allow_output_mutation=True)
 def get_inspector(coco_train, coco_predictions, images_path, eval_type, iou_min, iou_max):
@@ -27,19 +28,114 @@ def app(args):
     st.title('COCO Explorer')
     ioumin = st.sidebar.slider("Minimum IoU", min_value=0.0, max_value=1.0, value=args.iou_min)
     ioumax = st.sidebar.slider("Maximum IoU", min_value=0.0, max_value=1.0, value=args.iou_max)
-    topbox = st.sidebar.selectbox("Choose what to do ", ['inspect predictions visually',
+    topbox = st.sidebar.selectbox("Choose what to do ", ['show all ground truth',
+                                                         'show all predictions',
+                                                         'inspect predictions visually',
                                                          'inspect image statistics',
                                                          'inspect annotations',
                                                          'CoCo scores'
                                                          ])
     inspector = get_inspector(args.coco_train, args.coco_predictions, args.images_path,
                               args.eval_type, ioumin, ioumax)
-    if topbox == 'inspect predictions visually':
+
+    if topbox == 'show all ground truth':
+        st.sidebar.subheader('Visual settings')
+        size = st.sidebar.slider('plot resolution', min_value=1, max_value=50, value=15)
+        score = st.sidebar.slider('score threshold', min_value=0.0, max_value=1.0, value=SCORE_DEFAULT)
+
+        draw_pred_mask = st.sidebar.checkbox("Draw predictions masks (red)")
+        draw_gt_mask = st.sidebar.checkbox("Draw ground truth masks (green)")
+
+        path = st.text_input('select image by path or filter by regular expression:',)
+        image_ids = inspector.image_ids
+        if path:
+            r = inspector._path2imageid(path)
+            if r < 0:
+                r = 0
+                try:
+                    pattern = re.compile(path)
+                    image_ids = inspector.get_images_for_file_name(pattern.match)
+                except Exception:
+                    image_ids = []
+                if not image_ids:
+                    st.error('No such image file_name')
+                    image_ids = inspector.image_ids
+            else:
+                r = image_ids.index(r)
+        else:
+            r = 0
+        if len(image_ids) > 1:
+            r = st.slider('slider trough all images', value=r, min_value=0, max_value=len(image_ids)-1)
+        path = inspector._imageid2path(image_ids[r])
+        st.text(path)
+        print(path)
+        f, fn = inspector.visualize_image(image_ids[r],
+                                            draw_gt_mask=draw_gt_mask,
+                                            draw_pred_mask=draw_pred_mask,
+                                            adjust_labels=adjust_labels,
+                                            score_threshold=score,
+                                            fontsize=size,
+                                            show_only=['gt', 'fn'],
+                                            figsize=(size, size))
+        st.pyplot(f[0])
+        imscores = inspector.image_scores_agg
+        if image_ids[r] in imscores.index:
+            data = imscores.loc[image_ids[r]]
+            data.rename({'gt_i':'matched gt_i'}, inplace=True)
+            st.dataframe(data.astype(str))
+
+    elif topbox == 'show all predictions':
+        st.sidebar.subheader('Visual settings')
+        size = st.sidebar.slider('plot resolution', min_value=1, max_value=50, value=15)
+        score = st.sidebar.slider('score threshold', min_value=0.0, max_value=1.0, value=SCORE_DEFAULT)
+
+        draw_pred_mask = st.sidebar.checkbox("Draw predictions masks (red)")
+        draw_gt_mask = st.sidebar.checkbox("Draw ground truth masks (green)")
+
+        path = st.text_input('select image by path or filter by regular expression:',)
+        image_ids = inspector.image_ids
+        if path:
+            r = inspector._path2imageid(path)
+            if r < 0:
+                r = 0
+                try:
+                    pattern = re.compile(path)
+                    image_ids = inspector.get_images_for_file_name(pattern.match)
+                except Exception:
+                    image_ids = []
+                if not image_ids:
+                    st.error('No such image file_name')
+                    image_ids = inspector.image_ids
+            else:
+                r = image_ids.index(r)
+        else:
+            r = 0
+        if len(image_ids) > 1:
+            r = st.slider('slider trough all images', value=r, min_value=0, max_value=len(image_ids)-1)
+        path = inspector._imageid2path(image_ids[r])
+        st.text(path)
+        print(path)
+        f, fn = inspector.visualize_image(image_ids[r],
+                                            draw_gt_mask=draw_gt_mask,
+                                            draw_pred_mask=draw_pred_mask,
+                                            adjust_labels=adjust_labels,
+                                            score_threshold=score,
+                                            fontsize=size,
+                                            show_only=['tp', 'fp'],
+                                            figsize=(size, size))
+        st.pyplot(f[0])
+        imscores = inspector.image_scores_agg
+        if image_ids[r] in imscores.index:
+            data = imscores.loc[image_ids[r]]
+            data.rename({'gt_i':'matched gt_i'}, inplace=True)
+            st.dataframe(data.astype(str))
+
+    elif topbox == 'inspect predictions visually':
 
         st.sidebar.subheader('Inspect predictions')
 
         vis_options = {'true positives': 'tp',
-                       'ground truth': 'gt',
+                       'matched ground truth': 'gt',
                        'false negatives': 'fn',
                        'false positives': 'fp',
                        }
@@ -49,7 +145,7 @@ def app(args):
         TP - results matching GT (orange)
         FP - results not matching GT (teal)
         FN - GT not matching results (red)
-        GT - all ground truth (green)
+        GT - matched ground truth (green)
         """)
         ms = st.sidebar.multiselect("",
                                     list(vis_options.keys()),
@@ -58,7 +154,7 @@ def app(args):
 
         st.sidebar.subheader('Visual settings')
         size = st.sidebar.slider('plot resolution', min_value=1, max_value=50, value=15)
-        score = st.sidebar.slider('score threshold', min_value=0.0, max_value=1.0, value=0.5)
+        score = st.sidebar.slider('score threshold', min_value=0.0, max_value=1.0, value=SCORE_DEFAULT)
 
         draw_pred_mask = st.sidebar.checkbox("Draw predictions masks (red)")
         draw_gt_mask = st.sidebar.checkbox("Draw ground truth masks (green)")
@@ -101,7 +197,9 @@ def app(args):
             st.pyplot(f[0])
             imscores = inspector.image_scores_agg
             if image_ids[r] in imscores.index:
-                st.dataframe(imscores.loc[image_ids[r]])
+                data = imscores.loc[image_ids[r]]
+                data.rename({'gt_i':'matched gt_i'}, inplace=True)
+                st.dataframe(data.astype(str))
 
         if r == 'category':
             category = st.sidebar.selectbox(label='select by category',
@@ -196,7 +294,7 @@ if __name__ == '__main__':
                         help="COCO annotations to compare to")
     parser.add_argument("--images_path", type=str, default=os.getcwd(), metavar="PATH/TO/IMAGES/",
                         help="Directory path to prepend to file_name paths in COCO")
-    parser.add_argument("--eval_type", type=str, default="bbox", choices={"bbox", "segm", "keypoints"},
+    parser.add_argument("--eval_type", type=str, default="segm", choices={"bbox", "segm", "keypoints"},
                         help="Mode of comparison (where to look for a 'match')")
     parser.add_argument("--iou_min", type=float, default=0.5,
                         help="Initial minimum IoU (overlap) (what constitutes a 'match')")
