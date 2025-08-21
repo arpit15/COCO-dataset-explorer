@@ -39,6 +39,13 @@ def app(args):
                               args.eval_type, ioumin, ioumax)
 
     if topbox == 'show all ground truth':
+        st.sidebar.text("""
+        What is shown on image
+        TP - results matching GT (orange)
+        FP - results not matching GT (teal)
+        FN - GT not matching results (red)
+        GT - matched ground truth (green)
+        """)
         st.sidebar.subheader('Visual settings')
         size = st.sidebar.slider('plot resolution', min_value=1, max_value=50, value=15)
         score = st.sidebar.slider('score threshold', min_value=0.0, max_value=1.0, value=SCORE_DEFAULT)
@@ -72,7 +79,7 @@ def app(args):
         f, fn = inspector.visualize_image(image_ids[r],
                                             draw_gt_mask=draw_gt_mask,
                                             draw_pred_mask=draw_pred_mask,
-                                            adjust_labels=adjust_labels,
+                                            adjust_labels=False,
                                             score_threshold=score,
                                             fontsize=size,
                                             show_only=['gt', 'fn'],
@@ -85,6 +92,13 @@ def app(args):
             st.dataframe(data.astype(str))
 
     elif topbox == 'show all predictions':
+        st.sidebar.text("""
+        What is shown on image
+        TP - results matching GT (orange)
+        FP - results not matching GT (teal)
+        FN - GT not matching results (red)
+        GT - matched ground truth (green)
+        """)
         st.sidebar.subheader('Visual settings')
         size = st.sidebar.slider('plot resolution', min_value=1, max_value=50, value=15)
         score = st.sidebar.slider('score threshold', min_value=0.0, max_value=1.0, value=SCORE_DEFAULT)
@@ -118,7 +132,7 @@ def app(args):
         f, fn = inspector.visualize_image(image_ids[r],
                                             draw_gt_mask=draw_gt_mask,
                                             draw_pred_mask=draw_pred_mask,
-                                            adjust_labels=adjust_labels,
+                                            adjust_labels=False,
                                             score_threshold=score,
                                             fontsize=size,
                                             show_only=['tp', 'fp'],
